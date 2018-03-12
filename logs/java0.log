@@ -1,0 +1,12 @@
+mars 12, 2018 10:35:59 PM org.ping.services.report.ReportObserver update
+INFOS: > {"host":"hostMain","icmp_ping":"icmp FAILED","tcp_ping":"tcp FAILED","trace":"tracer OK"}
+mars 12, 2018 10:35:59 PM org.ping.services.report.ReportObserver update
+INFOS: > {"host":"hostMain","icmp_ping":"icmp FAILED","tcp_ping":"tcp FAILED","trace":"tracer OK"}
+mars 12, 2018 10:35:59 PM org.ping.services.report.ReportObserver update
+INFOS: > {"host":"hostMain","icmp_ping":"icmp FAILED","tcp_ping":"tcp FAILED","trace":"tracer OK"}
+mars 12, 2018 10:35:59 PM org.ping.services.report.ReportObserver update
+INFOS: > {"host":"hostMain","icmp_ping":"icmp FAILED","tcp_ping":"tcp FAILED","trace":"tracer OK"}
+mars 12, 2018 10:36:03 PM org.ping.services.report.ReportObserver update
+INFOS: > {"host":"hostMain","icmp_ping":"icmp FAILED","tcp_ping":"tcp FAILED","trace":"tracer FAILED"}
+mars 12, 2018 10:36:03 PM org.ping.services.report.ReportObserver update
+INFOS: > {"host":"hostMain","icmp_ping":"icmp FAILED","tcp_ping":"tcp FAILED","trace":"tracer FAILED"}
