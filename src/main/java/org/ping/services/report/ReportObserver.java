@@ -31,7 +31,7 @@ public class ReportObserver implements Observer {
 		this.jsonFromObservable = (String)arg ;
 		
 		// logging ! 
-		LOGGER.info("> " + this.jsonFromObservable);
+		LOGGER.warning("> " + this.jsonFromObservable);
 		
 		//send the report by POST 
 		if (active) {
@@ -82,7 +82,7 @@ public class ReportObserver implements Observer {
 		  in.close();
 		  
 		  //printing result from response
-		  System.out.println(response.toString());
+		  System.out.println("Server answer back : " + response.toString());
 		 }
 	
 }

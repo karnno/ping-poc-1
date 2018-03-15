@@ -21,7 +21,7 @@ public class PingOneServiceOnlyTest {
 	@Test
 	public void testPingIcmpOnly() {
 		 
-		String   host = "hostMain";
+		String   host = "google.com";
 		int      delay = 1;
 		Report   oneReport = new Report(host);
 		PingICMP icmp1 = new PingICMP(oneReport, host, delay);
@@ -59,10 +59,11 @@ public class PingOneServiceOnlyTest {
 	@Test
 	public void testPingTcpOnly() {
 		 
-		String   host = "hostMain";
+		String   host = "google.com";
 		int      delay = 1;
 		Report   oneReport = new Report(host);
-		PingTCP  icmp1 = new PingTCP(oneReport, host, delay);
+		int      timeOutInMs = 5000;
+		PingTCP  icmp1 = new PingTCP(oneReport, host, delay, timeOutInMs);
 		 
 		//run the ping threads
 		ExecutorService executor = Executors.newFixedThreadPool(1);

@@ -1,7 +1,10 @@
 package org.ping.main;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -9,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LogManager;
 
 import org.ping.services.PingICMP;
 import org.ping.services.PingTCP;
@@ -38,25 +42,72 @@ import org.ping.services.report.ReportObserver;
 public class Main {
 
 	public static void main(String[] args) {
+
 		System.out.println("Run the main !");
-		String host = "hostMain";
-		String urlServer = "urlServer";
-		boolean serverReportingActive = false;
 		
-		Report oneReport = new Report(host);
-		oneReport.addObserver(new ReportObserver(host, urlServer, serverReportingActive));
+		loadLoggingConfiguration();
 		
-		int delay = 1;
+		Properties properties = new Properties();
+		String[] hosts = null;
+		int timeOutInMs;		
+		int delay;
+		String urlServer;
+		boolean serverReportingActive;
+		
+		try {
+//			properties.load(Main.class.getResourceAsStream("configuration.properties"));
+			properties.load(new java.io.FileInputStream("configuration.properties"));
+		} catch (java.io.IOException e) {
+			e.printStackTrace();
+		}
+		if (properties.get("hosts") != null 
+				&& properties.getProperty("delay") != null 
+				&& properties.getProperty("urlServer") != null
+				&& properties.getProperty("timeOutInMs") != null
+				&& properties.getProperty("serverReportingActive") !=null
+				) {
+			hosts = properties.getProperty("hosts").split(",");
+			delay = Integer.valueOf(properties.getProperty("delay"));
+			timeOutInMs = Integer.valueOf(properties.getProperty("timeOutInMs"));
+			urlServer = properties.getProperty("urlServer");
+			serverReportingActive = Boolean.valueOf(properties.getProperty("serverReportingActive"));
+		} else {
+			System.out.println(
+					"Please revise config file.. hosts and/or delay parameter(s), urlServer are missing, corrupted or incorrectly formatted"
+							+ "\n(Consider formatting hosts=\"host1, host2..\" and delay=seconds and urlServer=http://...... and timeOutInMs=milliseconds and serverReportingActive=true/false)");
+			return;
+		}
+
+		//////////////////////////////////////////////////////////////////
+		// All preliminary setup is correct and let's get to actual logic >
+		
+		String host1 = hosts[0], host2 = hosts[1];
+		
+		Report report1 = new Report(host1);
+		report1.addObserver(new ReportObserver(host1, urlServer, serverReportingActive));
+		
+		Report report2 = new Report(host2);
+		report2.addObserver(new ReportObserver(host2, urlServer, serverReportingActive));
 		
 		
-		PingICMP icmp1 = new PingICMP(oneReport, host, delay);
-		PingTCP tcp1 = new PingTCP(oneReport, host, delay);
-		PingTRACER tracer1 = new PingTRACER(oneReport, host, delay);
-//		PingTRACER tracer2 = new PingTRACER(oneReport, host, delay);
+		Callable<String> icmp1 		= new PingICMP(report1, host1 , delay);
+		Callable<String> tcp1 		= new PingTCP(report1, host1, delay, timeOutInMs);
+		Callable<String> tracer1 	= new PingTRACER(report1, host1, delay);
+		
+		Callable<String> icmp2 		= new PingICMP(report2, host2 , delay);
+		Callable<String> tcp2 		= new PingTCP(report2, host2, delay, timeOutInMs);
+		Callable<String> tracer2 	= new PingTRACER(report2, host2, delay);
 		
 		//run the ping threads
 		ExecutorService executor = Executors.newWorkStealingPool();
-		List<Callable<String>> callables = Arrays.asList(icmp1, tcp1, tracer1 /*, tracer2*/);
+		List<Callable<String>> callables = Arrays.asList(
+				icmp1,
+				tcp1, 
+				tracer1, 
+				icmp2, 
+				tcp2,
+				tracer2
+		);
 		
 		try {
 			List<Future<String>> futures =executor.invokeAll(callables);
@@ -78,7 +129,7 @@ public class Main {
 			excp.printStackTrace();
 			 
 		}
-		// eteindre l'executor
+		// shutdown l'executor
 		stop(executor);
 	}
 	
@@ -100,4 +151,15 @@ public class Main {
         }
     }
 	
+	static void loadLoggingConfiguration() {
+		try {
+			LogManager.getLogManager().readConfiguration(new java.io.FileInputStream("loggingconfig.properties"));
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

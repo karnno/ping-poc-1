@@ -1,9 +1,13 @@
 package org.ping.services;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.ping.services.report.Report;
@@ -26,6 +30,18 @@ public class PingTRACER extends AbstractPing implements Callable<String>{
 
 	@Override
 	public String call() throws Exception {
+		
+		String traceRouteCommand = ServicesUtils.getTraceRouteCommand();
+		if (traceRouteCommand.isEmpty()) {
+			String issueValue = 	" Unknown traceroute command for your operating system : " + ServicesUtils.getOsName();
+			reportIssue(issueValue);
+			throw new Exception(issueValue);
+		}
+		
+		List<String> results = new ArrayList<String>();
+//        ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "tracert", host);
+        StringBuilder result = new StringBuilder();
+	        
 		while (true) {
 			try {
 				// use the concurrentQueue to be sure no other PingTracer instance tries to 
@@ -39,34 +55,47 @@ public class PingTRACER extends AbstractPing implements Callable<String>{
 				
 				//at this point , we are sure to be the only PingTracer instance
 				// to ping the current host
+				
 					//
-					// do something that may cause an exception :-) 	
-					int rInt = ThreadLocalRandom.current().nextInt(20);
-					if (rInt<3) {
-						throw new ArithmeticException(" just throw it");
-					}else {
-						System.out.println(".tr.");
-					}
+					String line="";
+		            result.setLength(0);
+		            
+	            		Process process = Runtime.getRuntime().exec(traceRouteCommand + " " + host);
+	                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+	                innerWhile : while ((line = bufferedReader.readLine()) != null) {
+	                		if (line.indexOf("*") == -1) {
+	                			result.append(line).append("\t");
+	                		}else {
+	                			break innerWhile;
+	                		}
+	                }
+	        			
+		            results.add(result.toString());
+		            //
+		            if (result.length() != 0) {
+						//update the report continuously even if everything is OK 
+						updateReport(host, ReportPart.TRACER, result.toString());
+						TimeUnit.SECONDS.sleep(delay);
+		            }else {
+		            		// command returned nothing ?
+		            		reportIssue("TRACER failed with empty result");
+		            		break;
+		            }
 					
-					//
-					//update the report continuously even if everything is OK 
-					updateReport(host, ReportPart.TRACER, "tracer OK");
-					TimeUnit.SECONDS.sleep(delay);
-			
-			}catch(Exception ex) {
+			}catch(IOException ex) {
 				System.out.println("\n---- ping tracer issue !"  + ex.getLocalizedMessage());
-				reportIssue("one issue ");
+				reportIssue("TRACER failed " + ex.getLocalizedMessage());
 				break;
 			}finally {
 				concurrentQueueForHost.remove(host);
 			}
 		}// while
-		return "ok"; 
+		return "ok traceroute"; 
 				
 	}
 	
 	private void reportIssue(String what) {
-		super.updateReportWithIssue(host, ReportPart.TRACER, "tracer FAILED");
+		super.updateReportWithIssue(host, ReportPart.TRACER, what);
 	}
 
 }
